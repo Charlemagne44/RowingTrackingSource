@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+from math import sqrt
 
 movement_threshold = 0.02
 
@@ -18,22 +19,52 @@ class Calcs:
         return angle
     
     def detect_end(self, x_hist, y_hist):
-        if x_hist[0] - x_hist[4] < movement_threshold and x_hist[0] - x_hist[4] > -movement_threshold and y_hist[0] - y_hist[4] < movement_threshold and y_hist[0] - y_hist[4] > -movement_threshold:
+        if x_hist[0] - x_hist[-1] < movement_threshold and x_hist[0] - x_hist[-1] > -movement_threshold: #and y_hist[0] - y_hist[-1] < movement_threshold and y_hist[0] - y_hist[-1] > -movement_threshold:
             return True
+        #if sum(x_hist)/len(x_hist) <= movement_threshold and sum(y_hist)/len(y_hist):
+        #    return True
         else:
             return False
 
-    def angle_diff_from_normal(self, a, b, normal=None):
-        a = np.array(a) # start
-        b = np.array(b) # end
-        #if normal == "horizontal":
-        radians = np.arctan2(b[1] - a[1], b[0] - a[0])
-        angle = 180 - np.abs(radians * 180.0/np.pi)
+    def angle_diff_from_normal(self, a, b):
+        a = np.array(a) # First
+        b = np.array(b) # Mid
+        c = [b[1], 0]        
+        radians = np.arctan2(c[1]-b[1], c[0]-b[0]) - np.arctan2(a[1]-b[1], a[0]-b[0])
+        angle = np.abs(radians*180.0/np.pi)
+        
+        if angle >180.0:
+            angle = 360-angle
+            
+        return angle
+
+    def angle_test(self, a, b):
+        a = np.array(a) # First
+        b = np.array(b) # Mid
+        c = np.array([b[1], 0])      
+        #arccos((P12^2 + P13^2 - P23^2) / (2 * P12 * P13))
+        #where P12 is the length of the segment from P1 to P2, calculated by sqrt((P1x - P2x)2 + (P1y - P2y)2)
+        # 1 = b 2 = a 3 = c
+        #radians = arctan2(a[1], a[0])
+        #print(c[0], c[1])
+        ba = a - b
+        bc = c - b
+        cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
+        angle = np.arccos(cosine_angle)
+        return np.degrees(angle)
+
+        '''
+        pba = sqrt((b[0] - a[0])**2 + (b[1] - a[1])**2)
+        pbc = sqrt((b[0] - c[0])**2 + (c[1] - c[1])**2)
+        pac = sqrt((a[0] - c[0])**2 + (a[1] - c[1])**2)
+        radians = np.arccos((pba**2 + pbc**2 - pac**2) / (2 * pba * pbc))
+        
+        angle = np.abs(radians*180.0/np.pi)
         if angle >180.0:
             angle = 360-angle
         
         return angle
-        
+        '''
 
     def ResizeWithAspectRatio(self, image, width=None, height=None, inter=cv2.INTER_AREA):
         dim = None
