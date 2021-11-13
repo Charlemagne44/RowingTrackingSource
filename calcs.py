@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 from math import sqrt
+import mediapipe as mp
 
 movement_threshold = 0.02
 
@@ -17,6 +18,18 @@ class Calcs:
             angle = 360-angle
             
         return angle
+
+    def detect_side(self, landmarks):
+        mp_pose = mp.solutions.pose
+        lshoulder = landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].z
+        rshoulder = landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value].z
+        if lshoulder < rshoulder:
+            return "left"
+        elif lshoulder > rshoulder:
+            return "right"
+        else:
+            return "same"
+        
     
     def detect_end(self, x_hist, y_hist):
         if x_hist[0] - x_hist[-1] < movement_threshold and x_hist[0] - x_hist[-1] > -movement_threshold: #and y_hist[0] - y_hist[-1] < movement_threshold and y_hist[0] - y_hist[-1] > -movement_threshold:

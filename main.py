@@ -5,6 +5,7 @@ import os
 import shutil
 from calcs import *
 from render import *
+
 mp_drawing = mp.solutions.drawing_utils
 mp_pose = mp.solutions.pose
 
@@ -17,7 +18,7 @@ pause_frames = 40
 
 #end of stroke switch value
 prev_stroke = False
-filename = 'cooper_erg.MOV'
+filename = 'me_erg.mp4'
 
 cap = cv2.VideoCapture('Video/' + filename)
 ## Setup mediapipe instance
@@ -52,59 +53,73 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
 
             
             # Extract landmarks
-            try:
-                landmarks = results.pose_landmarks.landmark
+            #try:
+            landmarks = results.pose_landmarks.landmark
 
-                # Get coordinates
-                #shoulder = [landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].x,landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].y]
-                #elbow = [landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].x,landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].y]
-                #wrist = [landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].x,landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].y]
+            #detect front side
+            side = Calcs().detect_side(landmarks)
+            #print(side)
+
+            # Get coordinates
+            #shoulder = [landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].x,landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].y]
+            #elbow = [landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].x,landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].y]
+            #wrist = [landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].x,landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].y]
+
+            if side == "left":
                 knee = [landmarks[mp_pose.PoseLandmark.LEFT_KNEE.value].x,landmarks[mp_pose.PoseLandmark.LEFT_KNEE.value].y]
                 hip = [landmarks[mp_pose.PoseLandmark.LEFT_HIP.value].x,landmarks[mp_pose.PoseLandmark.LEFT_HIP.value].y]
                 shoulder = [landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].x,landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].y]
                 nose = [landmarks[mp_pose.PoseLandmark.NOSE.value].x,landmarks[mp_pose.PoseLandmark.NOSE.value].y]
+            elif side == "right":
+                knee = [landmarks[mp_pose.PoseLandmark.RIGHT_KNEE.value].x,landmarks[mp_pose.PoseLandmark.RIGHT_KNEE.value].y]
+                hip = [landmarks[mp_pose.PoseLandmark.RIGHT_HIP.value].x,landmarks[mp_pose.PoseLandmark.RIGHT_HIP.value].y]
+                shoulder = [landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value].x,landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value].y]
+                nose = [landmarks[mp_pose.PoseLandmark.NOSE.value].x,landmarks[mp_pose.PoseLandmark.NOSE.value].y]
+            else:
+                print("faulty footage")
+                exit(1)
 
-                hip_normal_angle = Calcs().angle_test(shoulder, hip)
-                hip_normal_angle = round(hip_normal_angle)
+            hip_normal_angle = Calcs().angle_test(shoulder, hip)
+            hip_normal_angle = round(hip_normal_angle)
 
-                # add to history
-                # history of last 20 frames for calculations
-                if len(nose_x_history) >= frames_to_consider:
-                    nose_x_history.pop(-1)
-                    nose_x_history.insert(0,nose[0])
-                else:
-                    nose_x_history.insert(0,nose[0])
+            # add to history
+            # history of last 20 frames for calculations
+            if len(nose_x_history) >= frames_to_consider:
+                nose_x_history.pop(-1)
+                nose_x_history.insert(0,nose[0])
+            else:
+                nose_x_history.insert(0,nose[0])
 
-                if len(nose_y_history) >= frames_to_consider:
-                    nose_y_history.pop(-1)
-                    nose_y_history.insert(0,nose[0])
-                else:
-                    nose_y_history.insert(0,nose[0])
-                
-                end = False
+            if len(nose_y_history) >= frames_to_consider:
+                nose_y_history.pop(-1)
+                nose_y_history.insert(0,nose[0])
+            else:
+                nose_y_history.insert(0,nose[0])
+            
+            end = False
 
-                # DETERMINE IF STROKE IS AT CATCH OR FINISH
-                if len(nose_x_history) >= 5:
-                    end = Calcs().detect_end(nose_x_history, nose_y_history)
+            # DETERMINE IF STROKE IS AT CATCH OR FINISH
+            if len(nose_x_history) >= 5:
+                end = Calcs().detect_end(nose_x_history, nose_y_history)
 
-                # Pause and overlay at end of stroke
-                if not prev_stroke == end: #if change from false to true or true to false for end of stroke
-                    if end == True and prev_stroke != end:
-                        print('reached end')
-                        #render detection of same image a few times for a standstill
-                        for i in range(30):                        
-                            Render().render_detections(image, hip_normal_angle, results)
-                            Render().render_text(image, hip_normal_angle)
-                            out.write(image)
-                            if cv2.waitKey(10) & 0xFF == ord('q'):
-                                break               
-                prev_stroke = end
-                
-                Render().render_detections(image, hip_normal_angle, results)
+            # Pause and overlay at end of stroke
+            if not prev_stroke == end: #if change from false to true or true to false for end of stroke
+                if end == True and prev_stroke != end:
+                    print('reached end')
+                    #render detection of same image a few times for a standstill
+                    for i in range(50):
+                        Render().render_text(image, hip_normal_angle)                        
+                        Render().render_detections(image, hip_normal_angle, results)
+                        out.write(image)
+                        if cv2.waitKey(10) & 0xFF == ord('q'):
+                            break               
+            prev_stroke = end
+            
+            Render().render_detections(image, hip_normal_angle, results)
 
-            except:
-                im2 = Calcs().ResizeWithAspectRatio(image, height=750)
-                cv2.imshow('Mediapipe Feed', im2)
+            #except:
+            im2 = Calcs().ResizeWithAspectRatio(image, height=750)
+            cv2.imshow('Mediapipe Feed', im2)
                         
             out.write(image)
 
@@ -118,4 +133,4 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
     out.release()
     cv2.destroyAllWindows()
 
-shutil.move("C:/Users/colli/Code/VS Code Python/Rowing Tracking/" + output + '.avi', "C:/Users/colli/Code/VS Code Python/Rowing Tracking/Results/" + output + '.avi')
+shutil.move("C:/Users/colli/Code/RowingTrackingSource/" + output + '.avi', "C:/Users/colli/Code/RowingTrackingSource/Results" + output + '.avi')
