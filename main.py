@@ -18,7 +18,7 @@ pause_frames = 40
 
 #end of stroke switch value
 prev_stroke = False
-filename = 'Abi.MOV'
+filename = 'snap.mp4'
 
 cap = cv2.VideoCapture('Video/' + filename)
 ## Setup mediapipe instance
@@ -79,10 +79,16 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
            #     exit(1)
 
             #if side == "left":
-            hip_normal_angle = Calcs().three_dimensional_angle(La=lshoulder, Lb=lhip, Ra=rshoulder, Rb=rhip, frame_width=frame_width, frame_height=frame_height)
 
-            #elif side == "right":
-             #   hip_normal_angle = Calcs().three_dimensional_angle(a=rshoulder, b=rhip, frame_width=frame_width, frame_height=frame_height)
+            #3D AVERAGE BOTH SIDES TESTING
+            #hip_normal_angle = Calcs().three_dimensional_angle(La=lshoulder, Lb=lhip, Ra=rshoulder, Rb=rhip, frame_width=frame_width, frame_height=frame_height)
+
+            print(side)
+            #3D USE FOREFRONT SIDE
+            if side == "left":
+                hip_normal_angle = Calcs().three_dimensional_one_side(a=lshoulder, b=lhip, frame_width=frame_width, frame_height=frame_height)
+            else:
+                hip_normal_angle = Calcs().three_dimensional_one_side(a=rshoulder, b=rhip, frame_width=frame_width, frame_height=frame_height)
             
             
             #hip_normal_angle = Calcs().angle_diff_from_normal(shoulder, hip, frame_width=frame_width, frame_height=frame_height)

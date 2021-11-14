@@ -89,6 +89,29 @@ class Calcs:
         return angle
         '''
 
+    def three_dimensional_one_side(self, a, b, frame_width, frame_height):
+        a = np.array(a)
+        b = np.array(b)
+        #rescaling for aspect ratio
+
+        a[0] *= frame_width
+        b[0] *= frame_width
+        a[1] *= frame_height
+        b[1] *= frame_height
+        #La[2] *= frame_height
+        #Lb[2] *= frame_width
+
+        c = [b[0], 0, b[2]] #normal
+        c = np.array(c)
+
+        ba = a - b
+        bc = c - b
+
+        cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
+        angle = np.arccos(cosine_angle)
+        print("angle: ", np.degrees(angle))
+        return np.degrees(angle)    
+
     def three_dimensional_angle(self, La, Lb, Ra, Rb, frame_width, frame_height):
         La = np.array(La) # First shoulder
         Lb = np.array(Lb) # Mid hip
@@ -108,11 +131,11 @@ class Calcs:
         Lb[0] *= frame_width
         La[1] *= frame_height
         Lb[1] *= frame_height
+        #La[2] *= frame_height
+        #Lb[2] *= frame_width
+
         c = [Lb[0], 0, Lb[2]] #normal
         c = np.array(c)
-        #a = np.array([32.49, -39.96,-3.86])
-        #b = np.array([31.39, -39.28, -4.66])
-        #c = np.array([31.14, -38.09,-4.49])
 
         ba = La - Lb
         bc = c - Lb
