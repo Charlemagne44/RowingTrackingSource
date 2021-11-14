@@ -18,7 +18,7 @@ pause_frames = 40
 
 #end of stroke switch value
 prev_stroke = False
-filename = 'me_erg.mp4'
+filename = 'snap.mp4'
 
 cap = cv2.VideoCapture('Video/' + filename)
 ## Setup mediapipe instance
@@ -76,10 +76,10 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
                 shoulder = [landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value].x,landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value].y]
                 nose = [landmarks[mp_pose.PoseLandmark.NOSE.value].x,landmarks[mp_pose.PoseLandmark.NOSE.value].y]
             else:
-                print("faulty footage")
+                print("no perceived depth")
                 exit(1)
 
-            hip_normal_angle = Calcs().angle_test(shoulder, hip)
+            hip_normal_angle = Calcs().angle_diff_from_normal(shoulder, hip, frame_width=frame_width, frame_height=frame_height)
             hip_normal_angle = round(hip_normal_angle)
 
             # add to history
@@ -105,14 +105,19 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
             # Pause and overlay at end of stroke
             if not prev_stroke == end: #if change from false to true or true to false for end of stroke
                 if end == True and prev_stroke != end:
-                    print('reached end')
+                    #print('reached end')
                     #render detection of same image a few times for a standstill
-                    for i in range(50):
+                    for i in range(50):                        
                         Render().render_text(image, hip_normal_angle)                        
                         Render().render_detections(image, hip_normal_angle, results)
                         out.write(image)
                         if cv2.waitKey(10) & 0xFF == ord('q'):
-                            break               
+                            out.write(image)
+                            shutil.move("C:/Users/colli/Code/RowingTrackingSource/" + output + '.avi', "C:/Users/colli/Code/RowingTrackingSource/Results/" + output + '.avi')
+                            cap.release()
+                            out.release()
+                            cv2.destroyAllWindows()
+                            exit            
             prev_stroke = end
             
             Render().render_detections(image, hip_normal_angle, results)
@@ -133,4 +138,4 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
     out.release()
     cv2.destroyAllWindows()
 
-shutil.move("C:/Users/colli/Code/RowingTrackingSource/" + output + '.avi', "C:/Users/colli/Code/RowingTrackingSource/Results" + output + '.avi')
+shutil.move("C:/Users/colli/Code/RowingTrackingSource/" + output + '.avi', "C:/Users/colli/Code/RowingTrackingSource/Results/" + output + '.avi')

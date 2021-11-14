@@ -39,16 +39,26 @@ class Calcs:
         else:
             return False
 
-    def angle_diff_from_normal(self, a, b):
-        a = np.array(a) # First
-        b = np.array(b) # Mid
-        c = [b[1], 0]        
+    def angle_diff_from_normal(self, a, b, frame_width, frame_height):
+        a = np.array(a) # First shoulder
+        b = np.array(b) # Mid hip
+        #rescaling for aspect ratio
+        a[0] *= frame_width
+        b[0] *= frame_width
+        a[1] *= frame_height
+        b[1] *= frame_height
+        c = [b[0], 0] #normal
+        #print(frame_height, frame_width)
+        #print("shoulder x: ", a[0], "shoulder y ", a[1])
+        #print("hip x: ", b[0], "hip y: ", b[1]) 
+        #print("normal x: ", c[0], "normal y: ", c[1])  
         radians = np.arctan2(c[1]-b[1], c[0]-b[0]) - np.arctan2(a[1]-b[1], a[0]-b[0])
         angle = np.abs(radians*180.0/np.pi)
         
         if angle >180.0:
             angle = 360-angle
             
+        print("angle: ", angle)
         return angle
 
     def angle_test(self, a, b):
@@ -78,6 +88,23 @@ class Calcs:
         
         return angle
         '''
+
+    def three_dimensional_angle(a, b, frame_width, frame_height):
+        p0 = [3.5, 6.7]
+        p1 = [7.9, 8.4]
+        p2 = [10.8, 4.8]
+
+        ''' 
+        compute angle (in degrees) for p0p1p2 corner
+        Inputs:
+            p0,p1,p2 - points in the form of [x,y]
+        '''
+
+        v0 = np.array(p0) - np.array(p1)
+        v1 = np.array(p2) - np.array(p1)
+
+        angle = np.math.atan2(np.linalg.det([v0,v1]),np.dot(v0,v1))
+        print np.degrees(angle)
 
     def ResizeWithAspectRatio(self, image, width=None, height=None, inter=cv2.INTER_AREA):
         dim = None
