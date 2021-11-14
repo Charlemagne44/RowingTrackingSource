@@ -89,22 +89,38 @@ class Calcs:
         return angle
         '''
 
-    def three_dimensional_angle(a, b, frame_width, frame_height):
-        p0 = [3.5, 6.7]
-        p1 = [7.9, 8.4]
-        p2 = [10.8, 4.8]
+    def three_dimensional_angle(self, La, Lb, Ra, Rb, frame_width, frame_height):
+        La = np.array(La) # First shoulder
+        Lb = np.array(Lb) # Mid hip
+        Ra = np.array(Ra) # First shoulder
+        Rb = np.array(Rb) # Mid hip 
+        #rescaling for aspect ratio
 
-        ''' 
-        compute angle (in degrees) for p0p1p2 corner
-        Inputs:
-            p0,p1,p2 - points in the form of [x,y]
-        '''
+        #taking average of left and right joints and reassigning them to L values as those are used for calculations
+        La[0] = La[0] * Ra[0] / 2
+        La[1] = La[1] * Ra[1] / 2
+        La[2] = La[2] * Ra[2] / 2
+        Lb[0] = Lb[0] * Rb[0] / 2
+        Lb[1] = Lb[1] * Rb[1] / 2
+        Lb[2] = Lb[2] * Rb[2] / 2
 
-        v0 = np.array(p0) - np.array(p1)
-        v1 = np.array(p2) - np.array(p1)
+        La[0] *= frame_width
+        Lb[0] *= frame_width
+        La[1] *= frame_height
+        Lb[1] *= frame_height
+        c = [Lb[0], 0, Lb[2]] #normal
+        c = np.array(c)
+        #a = np.array([32.49, -39.96,-3.86])
+        #b = np.array([31.39, -39.28, -4.66])
+        #c = np.array([31.14, -38.09,-4.49])
 
-        angle = np.math.atan2(np.linalg.det([v0,v1]),np.dot(v0,v1))
-        print np.degrees(angle)
+        ba = La - Lb
+        bc = c - Lb
+
+        cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
+        angle = np.arccos(cosine_angle)
+        print("angle: ", np.degrees(angle))
+        return np.degrees(angle)
 
     def ResizeWithAspectRatio(self, image, width=None, height=None, inter=cv2.INTER_AREA):
         dim = None
