@@ -13,12 +13,14 @@ mp_pose = mp.solutions.pose
 nose_x_history = []
 nose_y_history = []
 frames_to_consider = 10
+
+knee_history = []
 #number of frames for standstills
 pause_frames = 40
 
 #end of stroke switch value
 prev_stroke = False
-filename = 'snap.mp4'
+filename = 'me_erg.mp4'
 
 cap = cv2.VideoCapture('Video/' + filename)
 ## Setup mediapipe instance
@@ -70,10 +72,12 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
             lknee = [landmarks[mp_pose.PoseLandmark.LEFT_KNEE.value].x, landmarks[mp_pose.PoseLandmark.LEFT_KNEE.value].y, landmarks[mp_pose.PoseLandmark.LEFT_KNEE.value].z]
             lhip = [landmarks[mp_pose.PoseLandmark.LEFT_HIP.value].x,landmarks[mp_pose.PoseLandmark.LEFT_HIP.value].y, landmarks[mp_pose.PoseLandmark.LEFT_HIP.value].z]
             lshoulder = [landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].x,landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].y, landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].z]
+            lankle = [landmarks[mp_pose.PoseLandmark.LEFT_ANKLE.value].x,landmarks[mp_pose.PoseLandmark.LEFT_ANKLE.value].y, landmarks[mp_pose.PoseLandmark.LEFT_ANKLE.value].z]
             #elif side == "right":
             rknee = [landmarks[mp_pose.PoseLandmark.RIGHT_KNEE.value].x, landmarks[mp_pose.PoseLandmark.RIGHT_KNEE.value].y, landmarks[mp_pose.PoseLandmark.RIGHT_KNEE.value].z]
             rhip = [landmarks[mp_pose.PoseLandmark.RIGHT_HIP.value].x,landmarks[mp_pose.PoseLandmark.RIGHT_HIP.value].y, landmarks[mp_pose.PoseLandmark.RIGHT_HIP.value].z]
             rshoulder = [landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value].x,landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value].y, landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value].z]
+            rankle = [landmarks[mp_pose.PoseLandmark.RIGHT_ANKLE.value].x,landmarks[mp_pose.PoseLandmark.RIGHT_ANKLE.value].y, landmarks[mp_pose.PoseLandmark.RIGHT_ANKLE.value].z]
            # else:
            #     print("no perceived depth")
            #     exit(1)
@@ -86,9 +90,9 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
             print(side)
             #3D USE FOREFRONT SIDE
             if side == "left":
-                hip_normal_angle = Calcs().three_dimensional_one_side(a=lshoulder, b=lhip, frame_width=frame_width, frame_height=frame_height)
+                hip_normal_angle = Calcs().three_dimensional_one_side(a=lshoulder, b=lhip, frame_width=frame_width, frame_height=frame_height, norm='y')
             else:
-                hip_normal_angle = Calcs().three_dimensional_one_side(a=rshoulder, b=rhip, frame_width=frame_width, frame_height=frame_height)
+                hip_normal_angle = Calcs().three_dimensional_one_side(a=rshoulder, b=rhip, frame_width=frame_width, frame_height=frame_height, norm='y')
             
             
             #hip_normal_angle = Calcs().angle_diff_from_normal(shoulder, hip, frame_width=frame_width, frame_height=frame_height)
@@ -96,6 +100,7 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
 
             # add to history
             # history of last 20 frames for calculations
+            '''
             if len(nose_x_history) >= frames_to_consider:
                 nose_x_history.pop(-1)
                 nose_x_history.insert(0,nose[0])
@@ -107,12 +112,27 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
                 nose_y_history.insert(0,nose[0])
             else:
                 nose_y_history.insert(0,nose[0])
+            '''
+            #angle history end detection
+            if side == "left":
+                knee_angle = Calcs.calculate_angle(lhip, lknee, lankle)
+            else:
+                knee_angle = Calcs.calculate_angle(rhip, rknee, rankle)
+
+            print("knee angle: ", knee_angle)
+
+            if len(knee_history) >= frames_to_consider:
+                knee_history.pop(-1)
+                knee_history.insert(0,knee_angle)
+            else:
+                knee_history.insert(0,knee_angle)
             
             end = False
 
             # DETERMINE IF STROKE IS AT CATCH OR FINISH
-            if len(nose_x_history) >= 5:
-                end = Calcs().detect_end(nose_x_history, nose_y_history)
+            if len(knee_history) >= frames_to_consider/2:
+                end = bool(Calcs().end_detect(knee_history))
+            print(end)
 
             # Pause and overlay at end of stroke
             if not prev_stroke == end: #if change from false to true or true to false for end of stroke
@@ -133,7 +153,7 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
             Render().render_detections(image, hip_normal_angle, results)
 
             #except:
-            im2 = Calcs().ResizeWithAspectRatio(image, height=750)
+            im2 = Calcs().ResizeWithAspectRatio(image, height=500)
             cv2.imshow('Mediapipe Feed', im2)
                         
             out.write(image)

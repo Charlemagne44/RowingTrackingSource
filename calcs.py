@@ -6,7 +6,7 @@ import mediapipe as mp
 movement_threshold = 0.02
 
 class Calcs:
-    def calculate_angle(self, a,b,c):
+    def calculate_angle(a,b,c):
         a = np.array(a) # First
         b = np.array(b) # Mid
         c = np.array(c) # End
@@ -28,7 +28,7 @@ class Calcs:
         elif lshoulder > rshoulder:
             return "right"
         else:
-            return "same"
+            return False
         
     
     def detect_end(self, x_hist, y_hist):
@@ -39,7 +39,15 @@ class Calcs:
         else:
             return False
 
-    def angle_diff_from_normal(self, a, b, frame_width, frame_height):
+    def end_detect(self, angle_hist):
+        if angle_hist[0] < 80 and angle_hist[-1] < 80:
+            return "catch"
+        elif angle_hist[0] > 165 and angle_hist[-1] > 165:
+            return "finish"
+        else:
+            return "indeterminate"
+ 
+    def two_dimensional_one_side(self, a, b, frame_width, frame_height, norm):
         a = np.array(a) # First shoulder
         b = np.array(b) # Mid hip
         #rescaling for aspect ratio
@@ -47,7 +55,10 @@ class Calcs:
         b[0] *= frame_width
         a[1] *= frame_height
         b[1] *= frame_height
-        c = [b[0], 0] #normal
+        if norm == "y":
+            c = [b[0], 0] #normal
+        elif norm == "x":
+            c = [0, b[0]]
         #print(frame_height, frame_width)
         #print("shoulder x: ", a[0], "shoulder y ", a[1])
         #print("hip x: ", b[0], "hip y: ", b[1]) 
@@ -61,35 +72,8 @@ class Calcs:
         print("angle: ", angle)
         return angle
 
-    def angle_test(self, a, b):
-        a = np.array(a) # First
-        b = np.array(b) # Mid
-        c = np.array([b[1], 0])      
-        #arccos((P12^2 + P13^2 - P23^2) / (2 * P12 * P13))
-        #where P12 is the length of the segment from P1 to P2, calculated by sqrt((P1x - P2x)2 + (P1y - P2y)2)
-        # 1 = b 2 = a 3 = c
-        #radians = arctan2(a[1], a[0])
-        #print(c[0], c[1])
-        ba = a - b
-        bc = c - b
-        cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
-        angle = np.arccos(cosine_angle)
-        return np.degrees(angle)
-
-        '''
-        pba = sqrt((b[0] - a[0])**2 + (b[1] - a[1])**2)
-        pbc = sqrt((b[0] - c[0])**2 + (c[1] - c[1])**2)
-        pac = sqrt((a[0] - c[0])**2 + (a[1] - c[1])**2)
-        radians = np.arccos((pba**2 + pbc**2 - pac**2) / (2 * pba * pbc))
-        
-        angle = np.abs(radians*180.0/np.pi)
-        if angle >180.0:
-            angle = 360-angle
-        
-        return angle
-        '''
-
-    def three_dimensional_one_side(self, a, b, frame_width, frame_height):
+    
+    def three_dimensional_one_side(self, a, b, frame_width, frame_height, norm):
         a = np.array(a)
         b = np.array(b)
         #rescaling for aspect ratio
@@ -101,7 +85,10 @@ class Calcs:
         #La[2] *= frame_height
         #Lb[2] *= frame_width
 
-        c = [b[0], 0, b[2]] #normal
+        if norm == 'y':
+            c = [b[0], 0, b[2]] #normal
+        elif norm == 'x':
+            c = [0, b[1], b[2]]
         c = np.array(c)
 
         ba = a - b
@@ -109,7 +96,7 @@ class Calcs:
 
         cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
         angle = np.arccos(cosine_angle)
-        print("angle: ", np.degrees(angle))
+        #print("angle: ", np.degrees(angle))
         return np.degrees(angle)    
 
     def three_dimensional_angle(self, La, Lb, Ra, Rb, frame_width, frame_height):
