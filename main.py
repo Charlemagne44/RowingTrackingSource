@@ -81,16 +81,7 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
             rhip = [landmarks[mp_pose.PoseLandmark.RIGHT_HIP.value].x,landmarks[mp_pose.PoseLandmark.RIGHT_HIP.value].y, landmarks[mp_pose.PoseLandmark.RIGHT_HIP.value].z]
             rshoulder = [landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value].x,landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value].y, landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value].z]
             rankle = [landmarks[mp_pose.PoseLandmark.RIGHT_ANKLE.value].x,landmarks[mp_pose.PoseLandmark.RIGHT_ANKLE.value].y, landmarks[mp_pose.PoseLandmark.RIGHT_ANKLE.value].z]
-           # else:
-           #     print("no perceived depth")
-           #     exit(1)
-
-            #if side == "left":
-
-            #3D AVERAGE BOTH SIDES TESTING
-            #hip_normal_angle = Calcs().three_dimensional_angle(La=lshoulder, Lb=lhip, Ra=rshoulder, Rb=rhip, frame_width=frame_width, frame_height=frame_height)
-
-            #print(side)
+           
             #3D USE FOREFRONT SIDE
             if side == "left":
                 hip_normal_angle = Calcs().three_dimensional_one_side(a=lshoulder, b=lhip, c=None, frame_width=frame_width, frame_height=frame_height, norm='y')

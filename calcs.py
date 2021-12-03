@@ -64,15 +64,6 @@ class Calcs:
         #last_avg = ((knee_hist[-1][0] - shoulder_hist[-1][0]) + (knee_hist[-1][1] - shoulder_hist[-1][1]) + (knee_hist[-1][2] - shoulder_hist[-1][2])) / 3
 
         #print(first_avg)
-
-
-    def end_detect(self, angle_hist):
-        if angle_hist[0] < 80 and angle_hist[-1] < 80:
-            return "catch"
-        elif angle_hist[0] > 165 and angle_hist[-1] > 165:
-            return "finish"
-        else:
-            return False
  
     def two_dimensional_one_side(self, a, b, frame_width, frame_height, norm):
         a = np.array(a) # First shoulder
@@ -108,7 +99,7 @@ class Calcs:
         b[0] *= frame_width
         a[1] *= frame_height
         b[1] *= frame_height
-        
+
         if c != None:
             c = np.array(c)
             c[0] *= frame_width
