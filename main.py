@@ -19,7 +19,7 @@ frame_buffer = 0
 
 #end of stroke switch value
 prev_stroke = False
-filename = 'Zach.mov'
+filename = 'garage.mov'
 
 cap = cv2.VideoCapture('Video/' + filename)
 ## Setup mediapipe instance
@@ -70,7 +70,7 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
             #wrist = [landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].x,landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].y]
             nose = [landmarks[mp_pose.PoseLandmark.NOSE.value].x,landmarks[mp_pose.PoseLandmark.NOSE.value].y, landmarks[mp_pose.PoseLandmark.NOSE.value].z]
 
-           # if side == "left":
+        # if side == "left":
             lknee = [landmarks[mp_pose.PoseLandmark.LEFT_KNEE.value].x, landmarks[mp_pose.PoseLandmark.LEFT_KNEE.value].y, landmarks[mp_pose.PoseLandmark.LEFT_KNEE.value].z]
             lhip = [landmarks[mp_pose.PoseLandmark.LEFT_HIP.value].x,landmarks[mp_pose.PoseLandmark.LEFT_HIP.value].y, landmarks[mp_pose.PoseLandmark.LEFT_HIP.value].z]
             lshoulder = [landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].x,landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].y, landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].z]
@@ -80,7 +80,7 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
             rhip = [landmarks[mp_pose.PoseLandmark.RIGHT_HIP.value].x,landmarks[mp_pose.PoseLandmark.RIGHT_HIP.value].y, landmarks[mp_pose.PoseLandmark.RIGHT_HIP.value].z]
             rshoulder = [landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value].x,landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value].y, landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value].z]
             rankle = [landmarks[mp_pose.PoseLandmark.RIGHT_ANKLE.value].x,landmarks[mp_pose.PoseLandmark.RIGHT_ANKLE.value].y, landmarks[mp_pose.PoseLandmark.RIGHT_ANKLE.value].z]
-           
+        
             #3D USE FOREFRONT SIDE
             if side == "left":
                 hip_normal_angle = Calcs().three_dimensional_one_side(a=lshoulder, b=lhip, c=None, frame_width=frame_width, frame_height=frame_height, norm='y')
@@ -101,11 +101,11 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
             else:
                 hip_hist.insert(0, hip_body_angle)
 
-             # stroke counter logic
+            # stroke counter logic
             if hip_body_angle < 40:
                 stage = "catch"
             if hip_body_angle > 110 and stage=='catch':
-                stage="finish"
+                stage= "finish"
                 print(stage)
                 counter +=1
                 print('count: ', counter)
@@ -124,9 +124,12 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
             if frame_buffer < 0:
                 if not prev_stroke == end: #if change from false to true or true to false for end of stroke
                     if end == True and prev_stroke != end:
-                        frame_buffer = 30
-                        for i in range(30):                        
-                            Render().render_text(image, hip_normal_angle)                        
+                        frame_buffer = 20
+                        for i in range(30):
+                            if side == 'left':
+                                Render().render_text(image, hip_normal_angle, frame_width=frame_width, frame_height=frame_height, hip=lhip, end=stage)
+                            else:
+                                Render().render_text(image, hip_normal_angle, frame_width=frame_width, frame_height=frame_height, hip=rhip, end=stage)                      
                             Render().render_detections(image, hip_normal_angle, results)
                             out.write(image)
                             if cv2.waitKey(10) & 0xFF == ord('q'):
@@ -142,6 +145,8 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
             Render().render_detections(image, hip_normal_angle, results)
 
             #except:
+            #    continue
+
             im2 = Calcs().ResizeWithAspectRatio(image, height=700)
             cv2.imshow('Mediapipe Feed', im2)
                         

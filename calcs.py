@@ -37,14 +37,15 @@ class Calcs:
         for i in range(0, len(hip_hist)  - 1):
             tot_diff += hip_hist[i] - hip_hist[i+1]
         
+        print("hip body: ", hip_body)
         avg = tot_diff / frames
         print(abs(avg))
         if hip_body > 90:
             if abs(avg) < 1:
                 return 'finish'
-        elif hip_body < 40:
+        elif hip_body < 50:
             if abs(avg) < 1:
-                return 'finish'
+                return 'catch'
         else:
             return
     
