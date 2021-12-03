@@ -19,6 +19,7 @@ class Calcs:
             
         return angle
 
+
     def detect_side(self, landmarks):
         mp_pose = mp.solutions.pose
         lshoulder = landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].z
@@ -31,13 +32,39 @@ class Calcs:
             return False
         
     
-    def detect_end(self, x_hist, y_hist):
-        if x_hist[0] - x_hist[-1] < movement_threshold and x_hist[0] - x_hist[-1] > -movement_threshold: #and y_hist[0] - y_hist[-1] < movement_threshold and y_hist[0] - y_hist[-1] > -movement_threshold:
-            return True
-        #if sum(x_hist)/len(x_hist) <= movement_threshold and sum(y_hist)/len(y_hist):
-        #    return True
-        else:
-            return False
+    def detect_end(self, knee_hist, shoulder_hist, frame_width, frame_height):
+        #print(knee_hist[0])
+        #print(shoulder_hist[0])
+
+        #unsclased euclidian distance
+        delta1 = sqrt((knee_hist[0][0] - shoulder_hist[0][0])**2 + (knee_hist[0][1] - shoulder_hist[0][1])**2 + (knee_hist[0][2] - shoulder_hist[0][2])**2)
+        delta2 = sqrt((knee_hist[-1][0] - shoulder_hist[-1][0])**2 + (knee_hist[-1][1] - shoulder_hist[-1][1])**2 + (knee_hist[-1][2] - shoulder_hist[-1][2])**2)
+        
+        '''
+        for coords in knee_hist:
+            coords[0] *= frame_width
+            coords[1] *= frame_height
+            coords[2] *= ((frame_height + frame_width) / 2)
+
+        for coords in shoulder_hist:
+            coords[0] *= frame_width
+            coords[1] *= frame_height
+            coords[2] *= ((frame_height + frame_width) / 2)
+        '''
+
+        #scaled euclidian distance
+        #sdelta1 = sqrt((knee_hist[0][0] - shoulder_hist[0][0])**2 + (knee_hist[0][1] - shoulder_hist[0][1])**2 + (knee_hist[0][2] - shoulder_hist[0][2])**2)
+        #sdelta2 = sqrt((knee_hist[-1][0] - shoulder_hist[-1][0])**2 + (knee_hist[-1][1] - shoulder_hist[-1][1])**2 + (knee_hist[-1][2] - shoulder_hist[-1][2])**2)
+        
+        #print("unscaled euclidian: ", delta1)
+        #print("scaled euclidian: " , sdelta1)
+        
+        #calculate avg x y z difference for first and last frame of range
+        #first_avg = ((knee_hist[0][0] - shoulder_hist[0][0]) + (knee_hist[0][1] - shoulder_hist[0][1]) + (knee_hist[0][2] - shoulder_hist[0][2])) / 3
+        #last_avg = ((knee_hist[-1][0] - shoulder_hist[-1][0]) + (knee_hist[-1][1] - shoulder_hist[-1][1]) + (knee_hist[-1][2] - shoulder_hist[-1][2])) / 3
+
+        #print(first_avg)
+
 
     def end_detect(self, angle_hist):
         if angle_hist[0] < 80 and angle_hist[-1] < 80:
@@ -45,7 +72,7 @@ class Calcs:
         elif angle_hist[0] > 165 and angle_hist[-1] > 165:
             return "finish"
         else:
-            return "indeterminate"
+            return False
  
     def two_dimensional_one_side(self, a, b, frame_width, frame_height, norm):
         a = np.array(a) # First shoulder
@@ -73,24 +100,26 @@ class Calcs:
         return angle
 
     
-    def three_dimensional_one_side(self, a, b, frame_width, frame_height, norm):
+    def three_dimensional_one_side(self, a, b, c, frame_width, frame_height, norm):
         a = np.array(a)
         b = np.array(b)
-        #rescaling for aspect ratio
 
         a[0] *= frame_width
         b[0] *= frame_width
         a[1] *= frame_height
         b[1] *= frame_height
-        #La[2] *= frame_height
-        #Lb[2] *= frame_width
-
-        if norm == 'y':
-            c = [b[0], 0, b[2]] #normal
-        elif norm == 'x':
-            c = [0, b[1], b[2]]
-        c = np.array(c)
-
+        
+        if c != None:
+            c = np.array(c)
+            c[0] *= frame_width
+            c[1] *= frame_height
+        else:
+            if norm == 'y':
+                c = [b[0], 0, b[2]] #normal
+            elif norm == 'x':
+                c = [0, b[1], b[2]]
+        #rescaling for aspect ratio
+        
         ba = a - b
         bc = c - b
 
@@ -107,12 +136,12 @@ class Calcs:
         #rescaling for aspect ratio
 
         #taking average of left and right joints and reassigning them to L values as those are used for calculations
-        La[0] = La[0] * Ra[0] / 2
-        La[1] = La[1] * Ra[1] / 2
-        La[2] = La[2] * Ra[2] / 2
-        Lb[0] = Lb[0] * Rb[0] / 2
-        Lb[1] = Lb[1] * Rb[1] / 2
-        Lb[2] = Lb[2] * Rb[2] / 2
+        La[0] = La[0] + Ra[0] / 2
+        La[1] = La[1] + Ra[1] / 2
+        La[2] = La[2] + Ra[2] / 2
+        Lb[0] = Lb[0] + Rb[0] / 2
+        Lb[1] = Lb[1] + Rb[1] / 2
+        Lb[2] = Lb[2] + Rb[2] / 2
 
         La[0] *= frame_width
         Lb[0] *= frame_width
