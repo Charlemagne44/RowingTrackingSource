@@ -31,7 +31,25 @@ class Calcs:
         else:
             return False
         
+
+    def end_detect(self, hip_body, hip_hist, frames):
+        tot_diff = 0
+        for i in range(0, len(hip_hist)  - 1):
+            tot_diff += hip_hist[i] - hip_hist[i+1]
+        
+        avg = tot_diff / frames
+        print(abs(avg))
+        if hip_body > 90:
+            if abs(avg) < 1:
+                return 'finish'
+        elif hip_body < 40:
+            if abs(avg) < 1:
+                return 'finish'
+        else:
+            return
     
+
+    #DEPRECATED
     def detect_end(self, knee_hist, shoulder_hist, frame_width, frame_height):
         #print(knee_hist[0])
         #print(shoulder_hist[0])

@@ -10,17 +10,16 @@ mp_drawing = mp.solutions.drawing_utils
 mp_pose = mp.solutions.pose
 
 #angle histories for stroke count detection
-knee_history = []
-shoulder_history= []
 frames_to_consider = 10
+hip_hist = []
 
-knee_history = []
 #number of frames for standstills
 pause_frames = 40
+frame_buffer = 0
 
 #end of stroke switch value
 prev_stroke = False
-filename = 'garage.mov'
+filename = 'Zach.mov'
 
 cap = cv2.VideoCapture('Video/' + filename)
 ## Setup mediapipe instance
@@ -96,6 +95,12 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
 
             #print("hip normal: ", hip_normal_angle, "hip body", hip_body_angle)
 
+            if len(hip_hist) >= frames_to_consider:
+                hip_hist.pop(-1)
+                hip_hist.insert(0, hip_body_angle)
+            else:
+                hip_hist.insert(0, hip_body_angle)
+
              # stroke counter logic
             if hip_body_angle < 40:
                 stage = "catch"
@@ -103,53 +108,36 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
                 stage="finish"
                 print(stage)
                 counter +=1
-                print(counter)
+                print('count: ', counter)
                 print("hip-normal: ", hip_normal_angle, ", hip-body: ", hip_body_angle)
 
-
-            if side == 'left':
-                knee = lknee
-                shoulder = lshoulder
-            else:
-                knee = rknee
-                shoulder = rshoulder
-            # add to history
-            # history of last 20 frames for calculations
-            if len(knee_history) >= frames_to_consider:
-                knee_history.pop(-1)
-                knee_history.insert(0, np.array(knee))
-                shoulder_history.pop(-1)
-                shoulder_history.insert(0, np.array(shoulder))
-            else:
-                knee_history.insert(0, np.array(knee))
-                shoulder_history.insert(0, np.array(shoulder))
-            
             #angle history end detection            
             end = False
-            Calcs().detect_end(knee_hist=knee_history, shoulder_hist=shoulder_history, frame_width=frame_width, frame_height=frame_height)
 
-            # DETERMINE IF STROKE IS AT CATCH OR FINISH
-            #if len(knee_history) >= frames_to_consider/2:
-            #    end = bool(Calcs().end_detect(knee_history))
-            #print(end)
+            end = bool(Calcs().end_detect(hip_body=hip_body_angle,  hip_hist=hip_hist, frames=frames_to_consider))
 
+            # frame buffer to prevent stroke end over detection
+            frame_buffer -= 1
+
+            
             # Pause and overlay at end of stroke
-            '''
-            if not prev_stroke == end: #if change from false to true or true to false for end of stroke
-                if end == True and prev_stroke != end:
-                    for i in range(50):                        
-                        Render().render_text(image, hip_normal_angle)                        
-                        Render().render_detections(image, hip_normal_angle, results)
-                        out.write(image)
-                        if cv2.waitKey(10) & 0xFF == ord('q'):
+            if frame_buffer < 0:
+                if not prev_stroke == end: #if change from false to true or true to false for end of stroke
+                    if end == True and prev_stroke != end:
+                        frame_buffer = 30
+                        for i in range(30):                        
+                            Render().render_text(image, hip_normal_angle)                        
+                            Render().render_detections(image, hip_normal_angle, results)
                             out.write(image)
-                            shutil.move("C:/Users/colli/Code/RowingTrackingSource/" + output + '.avi', "C:/Users/colli/Code/RowingTrackingSource/Results/" + output + '.avi')
-                            cap.release()
-                            out.release()
-                            cv2.destroyAllWindows()
-                            exit            
+                            if cv2.waitKey(10) & 0xFF == ord('q'):
+                                out.write(image)
+                                shutil.move("C:/Users/colli/Code/RowingTrackingSource/" + output + '.avi', "C:/Users/colli/Code/RowingTrackingSource/Results/" + output + '.avi')
+                                cap.release()
+                                out.release()
+                                cv2.destroyAllWindows()
+                                exit            
             prev_stroke = end
-            '''
+            
             
             Render().render_detections(image, hip_normal_angle, results)
 
