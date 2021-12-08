@@ -15,11 +15,10 @@ hip_hist = []
 
 #number of frames for standstills
 pause_frames = 40
-frame_buffer = 0
 
 #end of stroke switch value
-prev_stroke = False
-filename = 'garage.mov'
+prev_end = ''
+filename = 'jb.mov'
 
 cap = cv2.VideoCapture('Video/' + filename)
 ## Setup mediapipe instance
@@ -35,6 +34,7 @@ duration = frame_count/fps
 
 counter = 0
 stage = 'catch'
+stages = []
 
 with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
     while cap.isOpened():
@@ -106,41 +106,31 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
                 stage = "catch"
             if hip_body_angle > 110 and stage=='catch':
                 stage= "finish"
-                print(stage)
                 counter +=1
-                print('count: ', counter)
-                print("hip-normal: ", hip_normal_angle, ", hip-body: ", hip_body_angle)
 
             #angle history end detection            
-            end = False
 
-            end = bool(Calcs().end_detect(hip_body=hip_body_angle,  hip_hist=hip_hist, frames=frames_to_consider))
-
-            # frame buffer to prevent stroke end over detection
-            frame_buffer -= 1
-
+            end = Calcs().end_detect(hip_body=hip_body_angle,  hip_hist=hip_hist, frames=frames_to_consider)
             
-            # Pause and overlay at end of stroke
-            if frame_buffer < 0:
-                if not prev_stroke == end: #if change from false to true or true to false for end of stroke
-                    if end == True and prev_stroke != end:
-                        frame_buffer = 20
-                        for i in range(30):
-                            if side == 'left':
-                                Render().render_text(image, hip_normal_angle, frame_width=frame_width, frame_height=frame_height, hip=lhip, end=stage)
-                            else:
-                                Render().render_text(image, hip_normal_angle, frame_width=frame_width, frame_height=frame_height, hip=rhip, end=stage)                      
-                            Render().render_detections(image, hip_normal_angle, results)
-                            out.write(image)
-                            if cv2.waitKey(10) & 0xFF == ord('q'):
-                                out.write(image)
-                                shutil.move("C:/Users/colli/Code/RowingTrackingSource/" + output + '.avi', "C:/Users/colli/Code/RowingTrackingSource/Results/" + output + '.avi')
-                                cap.release()
-                                out.release()
-                                cv2.destroyAllWindows()
-                                exit            
-            prev_stroke = end
-            
+            # Pause and overlay at end of stroke if stroke changed and at end
+            #print(end, prev_end)
+            if end and prev_end != end:
+                for i in range(30):
+                    if side == 'left':
+                        Render().render_text(image, hip_normal_angle, frame_width=frame_width, frame_height=frame_height, hip=lhip, end=stage)
+                    else:
+                        Render().render_text(image, hip_normal_angle, frame_width=frame_width, frame_height=frame_height, hip=rhip, end=stage)                      
+                    Render().render_detections(image, hip_normal_angle, results)
+                    out.write(image)
+                    if cv2.waitKey(10) & 0xFF == ord('q'):
+                        out.write(image)
+                        shutil.move("C:/Users/colli/Code/RowingTrackingSource/" + output + '.avi', "C:/Users/colli/Code/RowingTrackingSource/Results/" + output + '.avi')
+                        cap.release()
+                        out.release()
+                        cv2.destroyAllWindows()
+                        exit       
+            if end != None and end != False:
+                prev_end = end
             
             Render().render_detections(image, hip_normal_angle, results)
 

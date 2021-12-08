@@ -4,6 +4,10 @@ from math import sqrt
 import mediapipe as mp
 
 movement_threshold = 0.02
+hip_body_catch_avg_threshold = 1
+hip_body_finish_avg_threshold = 1
+catch_treshold = 50
+finish_threshold = 90
 
 class Calcs:
     def calculate_angle(a,b,c):
@@ -37,17 +41,17 @@ class Calcs:
         for i in range(0, len(hip_hist)  - 1):
             tot_diff += hip_hist[i] - hip_hist[i+1]
         
-        print("hip body: ", hip_body)
+        #print("hip body: ", hip_body)
         avg = tot_diff / frames
-        print(abs(avg))
-        if hip_body > 90:
-            if abs(avg) < 1:
+        #print(abs(avg))
+        if hip_body > finish_threshold:
+            if abs(avg) < hip_body_finish_avg_threshold:
                 return 'finish'
-        elif hip_body < 50:
-            if abs(avg) < 1:
+        elif hip_body < catch_treshold:
+            if abs(avg) < hip_body_catch_avg_threshold:
                 return 'catch'
         else:
-            return
+            return False
     
 
     #DEPRECATED
