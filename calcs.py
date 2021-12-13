@@ -189,3 +189,22 @@ class Calcs:
             dim = (width, int(h * r))
 
         return cv2.resize(image, dim, interpolation=inter)
+
+    '''
+    if the body and shin angles are outside of the perscribed windows, then mark them as an out of window stroke
+    return a dictionary of different coached aspect of each end of the stroke
+    '''
+    def coaching(self, body_angle, shin_angle, stage, body_finish_window, body_catch_window, shin_catch_window):
+        report = {'body angle' : True,
+                'shin angle': True
+                }
+        if stage == 'finish':
+            if body_angle < body_finish_window[0] or body_angle > body_finish_window[1]:
+                report['body angle'] = False
+        else:
+            if body_angle < body_catch_window[0] or body_angle > body_catch_window[1]:
+                report['body angle'] = False
+            if shin_angle < shin_catch_window[0] or shin_angle > shin_catch_window[1]:
+                report['shin angle'] = False
+        return report
+

@@ -3,8 +3,10 @@ import mediapipe as mp
 import numpy as np
 import os
 import shutil
+#from moviepy.editor import *
 from calcs import *
 from render import *
+
 
 mp_drawing = mp.solutions.drawing_utils
 mp_pose = mp.solutions.pose
@@ -12,13 +14,14 @@ mp_pose = mp.solutions.pose
 #angle histories for stroke count detection
 frames_to_consider = 10
 hip_hist = []
+#shin_hist = []
 
 #number of frames for standstills
 pause_frames = 40
 
 #end of stroke switch value
 prev_end = ''
-filename = 'jb.mov'
+filename = 'garage.mov'
 
 cap = cv2.VideoCapture('Video/' + filename)
 ## Setup mediapipe instance
@@ -35,6 +38,15 @@ duration = frame_count/fps
 counter = 0
 stage = 'catch'
 stages = []
+
+body_finish_window = [30, 40]
+catch_finish_window = [30, 40] 
+shin_catch_window = [95, 85]
+
+eval_limit = 3
+
+calcs = Calcs()
+render = Render()
 
 with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
     while cap.isOpened():
@@ -61,7 +73,7 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
             landmarks = results.pose_landmarks.landmark
 
             #detect front side
-            side = Calcs().detect_side(landmarks)
+            side = calcs.detect_side(landmarks)
             #print(side)
 
             # Get coordinates
@@ -70,7 +82,7 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
             #wrist = [landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].x,landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].y]
             nose = [landmarks[mp_pose.PoseLandmark.NOSE.value].x,landmarks[mp_pose.PoseLandmark.NOSE.value].y, landmarks[mp_pose.PoseLandmark.NOSE.value].z]
 
-        # if side == "left":
+            # if side == "left":
             lknee = [landmarks[mp_pose.PoseLandmark.LEFT_KNEE.value].x, landmarks[mp_pose.PoseLandmark.LEFT_KNEE.value].y, landmarks[mp_pose.PoseLandmark.LEFT_KNEE.value].z]
             lhip = [landmarks[mp_pose.PoseLandmark.LEFT_HIP.value].x,landmarks[mp_pose.PoseLandmark.LEFT_HIP.value].y, landmarks[mp_pose.PoseLandmark.LEFT_HIP.value].z]
             lshoulder = [landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].x,landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].y, landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].z]
@@ -83,17 +95,18 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
         
             #3D USE FOREFRONT SIDE
             if side == "left":
-                hip_normal_angle = Calcs().three_dimensional_one_side(a=lshoulder, b=lhip, c=None, frame_width=frame_width, frame_height=frame_height, norm='y')
-                hip_body_angle =  Calcs().three_dimensional_one_side(a=lshoulder,  b=lhip, c=lknee, frame_width=frame_width,  frame_height=frame_height, norm=None)
+                hip_normal_angle = calcs.three_dimensional_one_side(a=lshoulder, b=lhip, c=None, frame_width=frame_width, frame_height=frame_height, norm='y')
+                hip_body_angle =  calcs.three_dimensional_one_side(a=lshoulder,  b=lhip, c=lknee, frame_width=frame_width,  frame_height=frame_height, norm=None)
+                shin_angle = calcs.three_dimensional_one_side(a=lankle, b = lknee, c=None, frame_width=frame_width, frame_height=frame_height, norm='x')
             else:
-                hip_normal_angle = Calcs().three_dimensional_one_side(a=rshoulder, b=rhip, c=None, frame_width=frame_width, frame_height=frame_height, norm='y')
-                hip_body_angle =  Calcs().three_dimensional_one_side(a=rshoulder,  b=rhip, c=rknee, frame_width=frame_width,  frame_height=frame_height, norm=None)
-            
-            #hip_normal_angle = Calcs().angle_diff_from_normal(shoulder, hip, frame_width=frame_width, frame_height=frame_height)
+                hip_normal_angle = calcs.three_dimensional_one_side(a=rshoulder, b=rhip, c=None, frame_width=frame_width, frame_height=frame_height, norm='y')
+                hip_body_angle =  calcs.three_dimensional_one_side(a=rshoulder,  b=rhip, c=rknee, frame_width=frame_width,  frame_height=frame_height, norm=None)
+                shin_angle = calcs.three_dimensional_one_side(a=rankle, b = rknee, c=None, frame_width=frame_width, frame_height=frame_height, norm='x')
+
             hip_normal_angle = round(hip_normal_angle)
             hip_body_angle = round(hip_body_angle)
+            shin_angle = round(shin_angle)
 
-            #print("hip normal: ", hip_normal_angle, "hip body", hip_body_angle)
 
             if len(hip_hist) >= frames_to_consider:
                 hip_hist.pop(-1)
@@ -110,17 +123,23 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
 
             #angle history end detection            
 
-            end = Calcs().end_detect(hip_body=hip_body_angle,  hip_hist=hip_hist, frames=frames_to_consider)
+            end = calcs.end_detect(hip_body=hip_body_angle,  hip_hist=hip_hist, frames=frames_to_consider)
             
             # Pause and overlay at end of stroke if stroke changed and at end
             #print(end, prev_end)
             if end and prev_end != end:
                 for i in range(30):
                     if side == 'left':
-                        Render().render_text(image, hip_normal_angle, frame_width=frame_width, frame_height=frame_height, hip=lhip, end=stage)
+                        if stage == 'catch':
+                            render.render_text_catch(image, hip_normal_angle, shin_angle=shin_angle, frame_width=frame_width, frame_height=frame_height, hip=lhip, knee=lknee, end=stage)
+                        else:
+                            render.render_text_finish(image, hip_normal_angle, frame_width, frame_height, hip=lhip, end=stage)
                     else:
-                        Render().render_text(image, hip_normal_angle, frame_width=frame_width, frame_height=frame_height, hip=rhip, end=stage)                      
-                    Render().render_detections(image, hip_normal_angle, results)
+                        if stage == 'catch':
+                            render.render_text_catch(image, hip_normal_angle, shin_angle=shin_angle, frame_width=frame_width, frame_height=frame_height, hip=rhip, knee=rknee, end=stage)                      
+                        else:
+                            render.render_text_finish(image, hip_normal_angle, frame_width, frame_height, hip=rhip, end=stage)
+                    render.render_detections(image, hip_normal_angle, results)
                     out.write(image)
                     if cv2.waitKey(10) & 0xFF == ord('q'):
                         out.write(image)
@@ -132,17 +151,20 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
             if end != None and end != False:
                 prev_end = end
             
-            Render().render_detections(image, hip_normal_angle, results)
+            render.render_detections(image, hip_normal_angle, results)
 
             #except:
             #    continue
 
-            im2 = Calcs().ResizeWithAspectRatio(image, height=700)
+            im2 = calcs.ResizeWithAspectRatio(image, height=700)
             cv2.imshow('Mediapipe Feed', im2)
                         
             out.write(image)
 
             if cv2.waitKey(10) & 0xFF == ord('q'):
+                break
+            
+            if counter >= eval_limit:
                 break
                 
         else:
@@ -153,3 +175,6 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
     cv2.destroyAllWindows()
 
 shutil.move("C:/Users/colli/Code/RowingTrackingSource/" + output + '.avi', "C:/Users/colli/Code/RowingTrackingSource/Results/" + output + '.avi')
+#clip = VideoFileClip("C:/Users/colli/Code/RowingTrackingSource/Results/" + output + '.avi')
+#clipSpeed = clip.speedx(2)
+#clipSpeed.write_videofile(r"")
