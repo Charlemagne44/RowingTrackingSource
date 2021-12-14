@@ -41,9 +41,9 @@ class Calcs:
         for i in range(0, len(hip_hist)  - 1):
             tot_diff += hip_hist[i] - hip_hist[i+1]
         
-        #print("hip body: ", hip_body)
+        #output += ("hip body: ", hip_body)
         avg = tot_diff / frames
-        #print(abs(avg))
+        #output += (abs(avg))
         if hip_body > finish_threshold:
             if abs(avg) < hip_body_finish_avg_threshold:
                 return 'finish'
@@ -56,8 +56,8 @@ class Calcs:
 
     #DEPRECATED
     def detect_end(self, knee_hist, shoulder_hist, frame_width, frame_height):
-        #print(knee_hist[0])
-        #print(shoulder_hist[0])
+        #output += (knee_hist[0])
+        #output += (shoulder_hist[0])
 
         #unsclased euclidian distance
         delta1 = sqrt((knee_hist[0][0] - shoulder_hist[0][0])**2 + (knee_hist[0][1] - shoulder_hist[0][1])**2 + (knee_hist[0][2] - shoulder_hist[0][2])**2)
@@ -79,14 +79,14 @@ class Calcs:
         #sdelta1 = sqrt((knee_hist[0][0] - shoulder_hist[0][0])**2 + (knee_hist[0][1] - shoulder_hist[0][1])**2 + (knee_hist[0][2] - shoulder_hist[0][2])**2)
         #sdelta2 = sqrt((knee_hist[-1][0] - shoulder_hist[-1][0])**2 + (knee_hist[-1][1] - shoulder_hist[-1][1])**2 + (knee_hist[-1][2] - shoulder_hist[-1][2])**2)
         
-        #print("unscaled euclidian: ", delta1)
-        #print("scaled euclidian: " , sdelta1)
+        #output += ("unscaled euclidian: ", delta1)
+        #output += ("scaled euclidian: " , sdelta1)
         
         #calculate avg x y z difference for first and last frame of range
         #first_avg = ((knee_hist[0][0] - shoulder_hist[0][0]) + (knee_hist[0][1] - shoulder_hist[0][1]) + (knee_hist[0][2] - shoulder_hist[0][2])) / 3
         #last_avg = ((knee_hist[-1][0] - shoulder_hist[-1][0]) + (knee_hist[-1][1] - shoulder_hist[-1][1]) + (knee_hist[-1][2] - shoulder_hist[-1][2])) / 3
 
-        #print(first_avg)
+        #output += (first_avg)
  
     def two_dimensional_one_side(self, a, b, frame_width, frame_height, norm):
         a = np.array(a) # First shoulder
@@ -100,17 +100,17 @@ class Calcs:
             c = [b[0], 0] #normal
         elif norm == "x":
             c = [0, b[0]]
-        #print(frame_height, frame_width)
-        #print("shoulder x: ", a[0], "shoulder y ", a[1])
-        #print("hip x: ", b[0], "hip y: ", b[1]) 
-        #print("normal x: ", c[0], "normal y: ", c[1])  
+        #output += (frame_height, frame_width)
+        #output += ("shoulder x: ", a[0], "shoulder y ", a[1])
+        #output += ("hip x: ", b[0], "hip y: ", b[1]) 
+        #output += ("normal x: ", c[0], "normal y: ", c[1])  
         radians = np.arctan2(c[1]-b[1], c[0]-b[0]) - np.arctan2(a[1]-b[1], a[0]-b[0])
         angle = np.abs(radians*180.0/np.pi)
         
         if angle >180.0:
             angle = 360-angle
             
-        print("angle: ", angle)
+        output += ("angle: ", angle)
         return angle
 
     
@@ -139,7 +139,7 @@ class Calcs:
 
         cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
         angle = np.arccos(cosine_angle)
-        #print("angle: ", np.degrees(angle))
+        #output += ("angle: ", np.degrees(angle))
         return np.degrees(angle)    
 
     def three_dimensional_angle(self, La, Lb, Ra, Rb, frame_width, frame_height):
@@ -172,7 +172,7 @@ class Calcs:
 
         cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
         angle = np.arccos(cosine_angle)
-        print("angle: ", np.degrees(angle))
+        output += ("angle: ", np.degrees(angle))
         return np.degrees(angle)
 
     def ResizeWithAspectRatio(self, image, width=None, height=None, inter=cv2.INTER_AREA):
@@ -195,22 +195,20 @@ class Calcs:
     return a dictionary of different coached aspect of each end of the stroke
     '''
     def coaching(self, body_angle, shin_angle, stage, body_finish_window, body_catch_window, shin_catch_window):
+        output = ''
         if stage == 'finish':
             if body_angle < body_finish_window[0] or body_angle > body_finish_window[1]:
-                print("finish body angle: " + str(body_angle) + " out of finish body angle range " + str(body_finish_window))
-                return
+                output += ("finish body angle: " + str(body_angle) + " out of finish body angle range " + str(body_finish_window) + '\n')
             else:
-                print("finish body angle: " + str(body_angle) + " in finish body angle range " + str(body_finish_window))
-                return
+                output += ("finish body angle: " + str(body_angle) + " in finish body angle range " + str(body_finish_window)  + '\n')
         else:
             if body_angle < body_catch_window[0] or body_angle > body_catch_window[1]:
-                print("catch body angle: " + str(body_angle) + " out of catch body angle range " + str(body_catch_window))
+                output += ("catch body angle: " + str(body_angle) + " out of catch body angle range " + str(body_catch_window)  + '\n')
             else:
-                print("catch body angle: " + str(body_angle) + " in catch body angle range " + str(body_catch_window))
+                output += ("catch body angle: " + str(body_angle) + " in catch body angle range " + str(body_catch_window)  + '\n')
             if shin_angle < shin_catch_window[0] or shin_angle > shin_catch_window[1]:
-                print("catch shin angle: " + str(shin_angle) + " out of catch shin angle range " + str(shin_catch_window))
-                return
+                output += ("catch shin angle: " + str(shin_angle) + " out of catch shin angle range " + str(shin_catch_window)  + '\n')
             else:
-                print("catch shin angle: " + str(shin_angle) + " in catch shin angle range " + str(shin_catch_window))
-        return
+                output += ("catch shin angle: " + str(shin_angle) + " in catch shin angle range " + str(shin_catch_window)  + '\n')
+        return output
 

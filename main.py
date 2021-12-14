@@ -21,7 +21,7 @@ pause_frames = 40
 
 #end of stroke switch value
 prev_end = ''
-filename = 'garage.mov'
+filename = 'me_erg.mp4'
 
 cap = cv2.VideoCapture('Video/' + filename)
 ## Setup mediapipe instance
@@ -41,12 +41,23 @@ stages = []
 
 body_finish_window = [30, 40]
 body_catch_window = [20, 30] 
-shin_catch_window = [0, 10]
+shin_catch_window = [85, 95]
 
 eval_limit = 3
 
 calcs = Calcs()
 render = Render()
+
+#coaching data
+save_path = r'C:\Users\colli\Code\RowingTrackingSource\Results'
+file = filename[:-4] + '.txt'
+
+completeName = os.path.join(save_path, file)
+print(completeName)
+
+file1 = open(completeName, "w")
+file1.seek(0)
+file1.truncate()
 
 with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
     while cap.isOpened():
@@ -97,17 +108,17 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
             if side == "left":
                 hip_normal_angle = calcs.three_dimensional_one_side(a=lshoulder, b=lhip, c=None, frame_width=frame_width, frame_height=frame_height, norm='y')
                 hip_body_angle =  calcs.three_dimensional_one_side(a=lshoulder,  b=lhip, c=lknee, frame_width=frame_width,  frame_height=frame_height, norm=None)
-                shin_angle = calcs.three_dimensional_one_side(a=lknee, b = lankle, c=None, frame_width=frame_width, frame_height=frame_height, norm='y')
+                shin_angle = calcs.three_dimensional_one_side(a=lknee, b = lankle, c=None, frame_width=frame_width, frame_height=frame_height, norm='x')
             else:
                 hip_normal_angle = calcs.three_dimensional_one_side(a=rshoulder, b=rhip, c=None, frame_width=frame_width, frame_height=frame_height, norm='y')
                 hip_body_angle =  calcs.three_dimensional_one_side(a=rshoulder,  b=rhip, c=rknee, frame_width=frame_width,  frame_height=frame_height, norm=None)
-                shin_angle = calcs.three_dimensional_one_side(a=rknee, b = rankle, c=None, frame_width=frame_width, frame_height=frame_height, norm='y')
+                shin_angle = calcs.three_dimensional_one_side(a=rknee, b = rankle, c=None, frame_width=frame_width, frame_height=frame_height, norm='x')
 
             hip_normal_angle = round(hip_normal_angle)
             hip_body_angle = round(hip_body_angle)
             shin_angle = round(shin_angle)
 
-
+            #adding hip_angles into history for stroke detection
             if len(hip_hist) >= frames_to_consider:
                 hip_hist.pop(-1)
                 hip_hist.insert(0, hip_body_angle)
@@ -122,15 +133,15 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
                 counter +=1
 
             #angle history end detection            
-
             end = calcs.end_detect(hip_body=hip_body_angle,  hip_hist=hip_hist, frames=frames_to_consider)
             
             # Pause and overlay at end of stroke if stroke changed and at end
             #print(end, prev_end)
             if end and prev_end != end:
                 # run coaching func every end
-                print("Stroke " + str(counter))
+                file1.write("Stroke " + str(counter) + " stage " + stage + '\n')
                 calcs.coaching(body_angle=hip_normal_angle, shin_angle=shin_angle, stage=stage, body_finish_window=body_finish_window, body_catch_window=body_catch_window, shin_catch_window=shin_catch_window)
+                file1.write(calcs.coaching(body_angle=hip_normal_angle, shin_angle=shin_angle, stage=stage, body_finish_window=body_finish_window, body_catch_window=body_catch_window, shin_catch_window=shin_catch_window))
 
                 # render the coaching texts at the ends
                 for i in range(30):
@@ -149,6 +160,7 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
                     if cv2.waitKey(10) & 0xFF == ord('q'):
                         out.write(image)
                         shutil.move("C:/Users/colli/Code/RowingTrackingSource/" + output + '.avi', "C:/Users/colli/Code/RowingTrackingSource/Results/" + output + '.avi')
+                        file1.close()
                         cap.release()
                         out.release()
                         cv2.destroyAllWindows()
@@ -162,7 +174,7 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
             #    continue
 
             im2 = calcs.ResizeWithAspectRatio(image, height=700)
-            cv2.imshow('Mediapipe Feed', im2)
+            #cv2.imshow('Mediapipe Feed', im2)
                         
             out.write(image)
 
@@ -180,6 +192,4 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
     cv2.destroyAllWindows()
 
 shutil.move("C:/Users/colli/Code/RowingTrackingSource/" + output + '.avi', "C:/Users/colli/Code/RowingTrackingSource/Results/" + output + '.avi')
-#clip = VideoFileClip("C:/Users/colli/Code/RowingTrackingSource/Results/" + output + '.avi')
-#clipSpeed = clip.speedx(2)
-#clipSpeed.write_videofile(r"")
+file1.close()
