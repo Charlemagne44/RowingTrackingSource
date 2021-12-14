@@ -40,8 +40,8 @@ stage = 'catch'
 stages = []
 
 body_finish_window = [30, 40]
-catch_finish_window = [30, 40] 
-shin_catch_window = [95, 85]
+body_catch_window = [20, 30] 
+shin_catch_window = [0, 10]
 
 eval_limit = 3
 
@@ -97,11 +97,11 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
             if side == "left":
                 hip_normal_angle = calcs.three_dimensional_one_side(a=lshoulder, b=lhip, c=None, frame_width=frame_width, frame_height=frame_height, norm='y')
                 hip_body_angle =  calcs.three_dimensional_one_side(a=lshoulder,  b=lhip, c=lknee, frame_width=frame_width,  frame_height=frame_height, norm=None)
-                shin_angle = calcs.three_dimensional_one_side(a=lankle, b = lknee, c=None, frame_width=frame_width, frame_height=frame_height, norm='x')
+                shin_angle = calcs.three_dimensional_one_side(a=lknee, b = lankle, c=None, frame_width=frame_width, frame_height=frame_height, norm='y')
             else:
                 hip_normal_angle = calcs.three_dimensional_one_side(a=rshoulder, b=rhip, c=None, frame_width=frame_width, frame_height=frame_height, norm='y')
                 hip_body_angle =  calcs.three_dimensional_one_side(a=rshoulder,  b=rhip, c=rknee, frame_width=frame_width,  frame_height=frame_height, norm=None)
-                shin_angle = calcs.three_dimensional_one_side(a=rankle, b = rknee, c=None, frame_width=frame_width, frame_height=frame_height, norm='x')
+                shin_angle = calcs.three_dimensional_one_side(a=rknee, b = rankle, c=None, frame_width=frame_width, frame_height=frame_height, norm='y')
 
             hip_normal_angle = round(hip_normal_angle)
             hip_body_angle = round(hip_body_angle)
@@ -128,6 +128,11 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
             # Pause and overlay at end of stroke if stroke changed and at end
             #print(end, prev_end)
             if end and prev_end != end:
+                # run coaching func every end
+                print("Stroke " + str(counter))
+                calcs.coaching(body_angle=hip_normal_angle, shin_angle=shin_angle, stage=stage, body_finish_window=body_finish_window, body_catch_window=body_catch_window, shin_catch_window=shin_catch_window)
+
+                # render the coaching texts at the ends
                 for i in range(30):
                     if side == 'left':
                         if stage == 'catch':
@@ -164,7 +169,7 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
             if cv2.waitKey(10) & 0xFF == ord('q'):
                 break
             
-            if counter >= eval_limit:
+            if counter > eval_limit:
                 break
                 
         else:

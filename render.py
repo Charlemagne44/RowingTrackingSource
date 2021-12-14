@@ -32,16 +32,8 @@ class Render:
         hip[1] *= frame_height
         knee[0] *= frame_width
         knee[1] *= frame_height
-        cv2.putText(img=image, text=end + ' angle: ' + str(hip_normal_angle), 
-            #tuple(np.multiply(hip, [2000, 2000]).astype(int)), 
-            org=(int(hip[0]) - int(frame_width / 10), int(hip[1])),
-            fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=font_size, color=(255, 255, 255), thickness=1, lineType=cv2.LINE_AA
-        )
-        cv2.putText(img=image, text='shin angle: ' + str(shin_angle), 
-            #tuple(np.multiply(hip, [2000, 2000]).astype(int)), 
-            org=(int(knee[0]) - int(frame_width / 10), int(knee[1])),
-            fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=font_size, color=(255, 255, 255), thickness=1, lineType=cv2.LINE_AA
-        )
+        self.hip_text(image, hip_normal_angle, end, hip, frame_width, font_size, frame_height)
+        self.shin_text(image, shin_angle, knee, frame_width, font_size, frame_height)
         return
     
     def render_text_finish(self, image, hip_normal_angle, frame_width, frame_height, hip, end):
@@ -50,9 +42,21 @@ class Render:
         hip = np.array(hip)
         hip[0] *= frame_width
         hip[1] *= frame_height
+        self.hip_text(image, hip_normal_angle, end, hip, frame_width, font_size, frame_height)
+        return
+
+    def hip_text(self, image, hip_normal_angle, end, hip, frame_width, font_size, frame_height):
         cv2.putText(img=image, text=end + ' angle: ' + str(hip_normal_angle), 
             #tuple(np.multiply(hip, [2000, 2000]).astype(int)), 
-            org=(int(hip[0]) - int(frame_width / 10), int(hip[1])),
+            org=(int(hip[0]) - int(frame_width / 10), int(hip[1]) + int(frame_height/10)),
+            fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=font_size, color=(255, 255, 255), thickness=1, lineType=cv2.LINE_AA
+        )
+        return
+
+    def shin_text(self, image, shin_angle, knee, frame_width, font_size, frame_height):
+        cv2.putText(img=image, text='shin angle: ' + str(shin_angle), 
+            #tuple(np.multiply(hip, [2000, 2000]).astype(int)), 
+            org=(int(knee[0]), int(knee[1]) - int(frame_height/10)),
             fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=font_size, color=(255, 255, 255), thickness=1, lineType=cv2.LINE_AA
         )
         return

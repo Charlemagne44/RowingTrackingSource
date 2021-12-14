@@ -195,16 +195,22 @@ class Calcs:
     return a dictionary of different coached aspect of each end of the stroke
     '''
     def coaching(self, body_angle, shin_angle, stage, body_finish_window, body_catch_window, shin_catch_window):
-        report = {'body angle' : True,
-                'shin angle': True
-                }
         if stage == 'finish':
             if body_angle < body_finish_window[0] or body_angle > body_finish_window[1]:
-                report['body angle'] = False
+                print("finish body angle: " + str(body_angle) + " out of finish body angle range " + str(body_finish_window))
+                return
+            else:
+                print("finish body angle: " + str(body_angle) + " in finish body angle range " + str(body_finish_window))
+                return
         else:
             if body_angle < body_catch_window[0] or body_angle > body_catch_window[1]:
-                report['body angle'] = False
+                print("catch body angle: " + str(body_angle) + " out of catch body angle range " + str(body_catch_window))
+            else:
+                print("catch body angle: " + str(body_angle) + " in catch body angle range " + str(body_catch_window))
             if shin_angle < shin_catch_window[0] or shin_angle > shin_catch_window[1]:
-                report['shin angle'] = False
-        return report
+                print("catch shin angle: " + str(shin_angle) + " out of catch shin angle range " + str(shin_catch_window))
+                return
+            else:
+                print("catch shin angle: " + str(shin_angle) + " in catch shin angle range " + str(shin_catch_window))
+        return
 
