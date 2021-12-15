@@ -1,7 +1,7 @@
 
 # Rowing Pose Tracker
 
-This WIP tool is a largely experimental Computer Vision based coaching application for rowing. It utilizies the Mediapipe library to track the body throughout the stroke, and gives information on the angles of the athlete throughout the stroke. The global variables at the top in the main function can be modified to the desired angles of the coach. This application has not been packaged in any capacity for use. If you were to run this a conda environment would be recommended. Necessary libraries include mediapipe, opencv, numpy, and shutil.
+This WIP tool is a largely experimental Computer Vision based coaching application for rowing. It utilizies the Mediapipe library to track the joints, and gives information on the angles of the athlete throughout the stroke. The global variables at the top in the main function can be modified to the desired angles of the coach. This application has not been packaged in any capacity for use. If you were to run this a conda environment would be recommended. Necessary libraries include mediapipe, opencv, numpy, and shutil. The end goal is to have reliable angle feedback from a wide variety of angles using the mediapipe depth estimation along with 3 dimensional vector angle calculation.
 
 
 ## Usage/Examples
@@ -59,10 +59,11 @@ Install necessary dependencies (run separately, opencv is large package)
   pip install shutil
 ```
 
-Create source video directory and add foorage in directory
+Create source video directory and add footage in directory
 
 ```bash
   mkdir /RowingTrackingSource/Video/
+  mkdir /RowingTrackingSource/Results/
   cd /Video
   cp my_video.mp4 .
 ```
